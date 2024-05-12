@@ -63,7 +63,10 @@ func main() {
 
 	s := http.Server{Addr: ":" + httpPort}
 	go func() {
-		s.ListenAndServe()
+		err := s.ListenAndServe()
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}()
 
 	//Block until an unterrupt signal is received.
@@ -74,6 +77,9 @@ func main() {
 	serverReady = false
 	time.Sleep(shutdownTimeoutSeconds * time.Second)
 
-	s.Shutdown(context.Background())
+	err := s.Shutdown(context.Background())
+	if err != nil {
+		log.Printf("%s\n", err)
+	}
 	log.Println("BYE")
 }
