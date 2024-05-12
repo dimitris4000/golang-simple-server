@@ -22,12 +22,14 @@ var (
 	serverReady = true
 )
 
+func VersionHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, version)
+}
+
 func main() {
 	log.Println("Staring server on port " + httpPort)
 
-	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, version)
-	})
+	http.HandleFunc("/version", VersionHandler)
 
 	http.HandleFunc("/liveneess", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
