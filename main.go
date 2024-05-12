@@ -26,15 +26,16 @@ func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, version)
 }
 
+func LivenessHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "OK")
+}
+
 func main() {
 	log.Println("Staring server on port " + httpPort)
 
 	http.HandleFunc("/version", VersionHandler)
-
-	http.HandleFunc("/liveneess", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "OK")
-	})
+	http.HandleFunc("/liveneess", LivenessHandler)
 
 	http.HandleFunc("/readiness/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
@@ -61,7 +62,13 @@ func main() {
 		}
 	})
 
-	s := http.Server{Addr: ":" + httpPort}
+	s := http.Server{
+		Addr:              ":" + httpPort,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: 60 * time.Second,
+	}
 	go func() {
 		err := s.ListenAndServe()
 		if err != nil {
