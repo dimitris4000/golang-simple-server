@@ -31,36 +31,38 @@ func LivenessHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "OK")
 }
 
+func ReadinessHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		if r.URL.Path == "/readiness/ready" {
+			serverReady = true
+		} else if r.URL.Path == "/readiness/notready" {
+			serverReady = false
+		}
+	}
+
+	if serverReady {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "OK")
+	} else {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(w, "NOT OK")
+	}
+}
+
+func ShutdownHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		sigChan <- syscall.SIGTERM
+		fmt.Fprintln(w, "Shutdown initiated")
+	}
+}
+
 func main() {
 	log.Println("Staring server on port " + httpPort)
 
 	http.HandleFunc("/version", VersionHandler)
 	http.HandleFunc("/liveneess", LivenessHandler)
-
-	http.HandleFunc("/readiness/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			if r.URL.Path == "/readiness/ready" {
-				serverReady = true
-			} else if r.URL.Path == "/readiness/notready" {
-				serverReady = false
-			}
-		}
-
-		if serverReady {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, "OK")
-		} else {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			fmt.Fprintln(w, "NOT OK")
-		}
-	})
-
-	http.HandleFunc("/shutdown", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			sigChan <- syscall.SIGTERM
-			fmt.Fprintln(w, "Shutdown initiated")
-		}
-	})
+	http.HandleFunc("/readiness/", ReadinessHandler)
+	http.HandleFunc("/shutdown", ShutdownHandler)
 
 	s := http.Server{
 		Addr:              ":" + httpPort,
